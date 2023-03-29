@@ -15,36 +15,6 @@ def n(x,A,Nsat,a,b,c): #first use the function with A=1
 def n_integrand(x):
     return 4*np.pi*(x**2)*n(x,A_test,Nsat,a,b,c)
 
-def trapezoid(f,a,b,N):
-    """
-    Parameters
-    ----------
-    f : function
-        Takes in a function y=f(x) to perform integration over.
-    a : float or int 
-        Lower boundary of the integral.
-    b : float or int 
-        Upper boundary of the integral.
-    N : int
-        Number of points used, higher N increases accuracy but is more costly
-
-    Returns
-    -------
-    float
-        Returns value of the integral.
-    """
-    x_values = np.linspace(a,b,N+1)
-    y_values = f(x_values)
-    h = (b-a)/N #step size 
-    return 0.5*h*(y_values[0]+y_values[-1]+2*np.sum(y_values[1:N]))
-
-def simpson(f,a,b,N):
-    S0 = trapezoid(f,a,b,N)
-    S1 = trapezoid(f,a,b,2*N)
-    return (4*S1 - S0)/3
-
-A_values = np.linspace(9.1,9.3,10000)
-
 def trap_loweropen(f,a,b,N): #eval. at semi open interval (a,b]
     x_values = np.linspace(a,b,N+1)[1:]
     y_values = f(x_values)
@@ -114,7 +84,6 @@ def RNG(a1,a2,a3,seed,N): #random number generator using combi of lcg and xor
     return random_numbers
 
 radii_sample = RNG(21,35,4,123456789,10000)*5  #Unif(0,5) distribution
-#radii_sample = np.random.rand(10000)*5
 print(radii_sample)
 
 plt.hist(radii_sample,bins=20,density=True,edgecolor='black')
@@ -123,6 +92,9 @@ plt.show()
 
 def n_normalised_integrand(x):
     return 4*np.pi*(x**2)*n_normalised(x)/100
+
+f_reject = 1 - (simpson_loweropen(n_normalised_integrand,0,5,10000))/5
+print(f_reject)
 
 radii = np.linspace(1e-10,5,10000)
 p_x = n_normalised_integrand(radii)
@@ -139,9 +111,11 @@ def rejection(f,x):
     return y 
     
 sample = rejection(n_normalised_integrand,radii_sample)
+sample_y = n_normalised_integrand(sample)
+
 print(len(radii_sample),len(sample))
 print(max(sample))
-sample_y = n_normalised_integrand(sample)
+
 logbins = np.logspace(-4,np.log10(5),20)
     
 plt.scatter(sample,sample_y,s=1,color='black',zorder=10)
@@ -170,14 +144,44 @@ plt.hist(sample,bins=logbins,density=False,edgecolor='black')
 plt.xscale('log')
 plt.show()
 
+#PROBLEM 1C
+
+"""
+random_index = (RNG(21,35,4,5324582,100)*len(sample)).astype(int)
+print(random_index)
+random_index = random_index.tolist()
+print(random_index[10])
+print(random_index[0:10]+random_index[10+1:])
+
+def selection(sample,N):
+    random_indices = (RNG(21,35,4,5324582,N)*len(sample)).astype(int)
+    random_indices = random_indices.tolist()
+    for i in range(len(random_indices)):
+        arr_without_i = random_indices[0:i]+random_indices[i+1:]
+        if random_indices[i] in arr_without_i:
+            random_indices[i] = (RNG(21,35,4,267355,1)*len(sample)).tolist()
+    random_indices = np.array(random_indices).astype(int)
+    return random_indices 
+
+A_test = np.array([1,3,5,2,6,1,7,2,4])
+print(selection(A_test,5))
+"""
+
 #PROBLEM 1D 
 
 def central_diff(f,x,h):
     return (f(x+h) - f(x-h)) / (2*h)
 
-derivative_CD = central_diff(n_normalised,1,1e-6) #gives great value 
-print(derivative_CD)
+def n_deriv_analytical(x,A,Nsat,a,b,c):
+    return A*Nsat*(np.exp(-(x/b)**c))*((a-3)/b * (x/b)**(a-4) -\
+                                       c/b * (x/b)**(a-3) * (x/b)**(c-1))
 
+derivative_CD = central_diff(n_normalised,1,1e-6) #gives great value 
+print(np.around(derivative_CD,12))
+derivative_analytical = n_deriv_analytical(1,(100/n_noNorm),100,2.4,0.25,1.6)
+print(np.around(derivative_analytical,12))
+
+"""
 x_values = np.linspace(0.9,1.1,1000)
 dx = 0.2/1000
 y_values = n_normalised(x_values)
@@ -188,6 +192,7 @@ plt.plot(x_values[1:],derivative)
 plt.hlines(-0.6253288977,0.9,1.1,linestyle='dashed')
 plt.grid()
 plt.show()
+"""
 
 
 

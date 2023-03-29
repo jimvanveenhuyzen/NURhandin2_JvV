@@ -40,12 +40,13 @@ def newton_raphson(f,x0,error):
     x0_old = x0
     x0_new = x0_old - f(x0_old)/central_diff(f,x0_old,0.0001)
     iteration = 1
-    print(f'After {iteration} iterations root is estimated at ({x0_new},{f(x0_new)})')
+    #print(f'After {iteration} iterations root is estimated at ({x0_new},{f(x0_new)})')
     while np.abs(x0_new - x0_old) > error:
+        print(f'After {iteration} iterations root is estimated at ({x0_new},{f(x0_new)})')
         x0_old = x0_new
         x0_new = x0_old - f(x0_old)/central_diff(f,x0_old,0.0001)
         iteration += 1
-        print(f'After {iteration} iterations root is estimated at ({x0_new},{f(x0_new)})')
+        #print(f'After {iteration} iterations root is estimated at ({x0_new},{f(x0_new)})')
     return x0_new
 
 print(newton_raphson(equilibrium1_input,3e3,0.1))
@@ -96,10 +97,31 @@ def FPNR_combi(f,a,b,error):
     return x0_new
 
 #print(FPNR_combi(equilibrium2_inputCase1,1,1e15,1e-10))
-#print(newton_raphson(equilibrium2_inputCase2,3e7,1e-10))
-#print(newton_raphson(equilibrium2_inputCase3,3e7,1e-10))
+print(newton_raphson(equilibrium2_inputCase2,3e7,1e-10))
+print(newton_raphson(equilibrium2_inputCase3,3e7,1e-10))
+
+def FP(f,a,b,error): #is this not bisection? 
+    c_old = 0 
+    c_new = (a+b)/2
+    iteration = 1 
+    while np.abs(c_new-c_old) > error:
+        print(f'After {iteration} iterations the root is estimated at {c_new}')
+        c_old = c_new
+        if f(a)*f(c_old) < 0:
+            b = c_old
+        elif f(b)*f(c_old) < 0:
+            a = c_old
+        c_new = (a+b)/2
+        iteration += 1
+    return c_new
+
+print(FP(equilibrium2_inputCase1,1,1e15,1e-10))
 
 #print(FPNR_combi(equilibrium1_input,1,1e7,0.1))
+
+"""
+In short: for 2a, use newton, for 2b use: FP, newton, newton
+"""
 
 
 
