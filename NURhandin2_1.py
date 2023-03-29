@@ -21,16 +21,6 @@ def trap_loweropen(f,a,b,N): #eval. at semi open interval (a,b]
     h = (b-a)/N #step size 
     return 0.5*h*(y_values[-1]+2*np.sum(y_values[0:N]))
 
-def simpson_loweropen(f,a,b,N): #eval. at semi open interval (a,b]
-    S0 = trap_loweropen(f,a,b,N)
-    S1 = trap_loweropen(f,a,b,2*N)
-    return (4*S1 - S0)/3
-
-n_noNorm = simpson_loweropen(n_integrand,0,5,10000)#use A=1 to compute integral
-A = 100/n_noNorm #use Nsat = 100 to find the correct A value 
-
-print('The normalisation value A is:',np.around(A,16))
-
 def romberg_loweropen(f,a,b,m):
     h = (b-a) #stepsize
     r = np.zeros(m)
@@ -53,11 +43,11 @@ def romberg_loweropen(f,a,b,m):
             r[j] = (N_p * r[j+1] - r[j])/(N_p - 1)
     return r[0]
 
-n_noNorm_2 = romberg_loweropen(n_integrand,0,5,20)
-print(100/n_noNorm_2)
+A_true = Nsat/romberg_loweropen(n_integrand,0,5,20)
+print(f'The normalisation constant is {A_true}')
 
 def n_normalised(x):
-    return n(x,(100/n_noNorm),100,2.4,0.25,1.6)
+    return n(x,A_true,100,2.4,0.25,1.6)
 
 #PROBLEM 1B
 
@@ -83,14 +73,13 @@ def RNG(a1,a2,a3,seed,N): #random number generator using combi of lcg and xor
         seed = xor_shift64(seed,a1,a2,a3)
     return random_numbers
 
-seeds = RNG(21,35,4,123456789,int(1e6))
+seeds = RNG(21,35,4,123456789,int(1e6)) #generate 1 million random seeds to use
 
 def sample_rejection(f,a,b,seed_list,N):
     sample,f_sample = [], []
     x_values = np.linspace(a,b,N)
     y_values = f(x_values)
     f_max = max(y_values)
-    print('max value is ' ,f_max)
     middle_index = int(len(seed_list)/2)
     for i in range(len(seed_list)):
         x = RNG(21,35,4,int(seed_list[i]*10e10),1)*(b-a) + a 
@@ -105,79 +94,75 @@ def sample_rejection(f,a,b,seed_list,N):
             return sample,f_sample
 
 def distribution(x):
-    return 4*np.pi*(x**2)*n_normalised(x)*100
+    return 4*np.pi*(x**2)*n_normalised(x)/Nsat
 
-radii = np.linspace(1e-10,5,10000)
+radii = np.linspace(1e-4,5,10000)
 p_x = distribution(radii)
-logbins = np.logspace(-4,np.log10(5),21)
+logbins = np.logspace(-4,np.log10(5),20)
 
-bin_width = np.zeros(len(logbins)-1)
-
-for i in range(1,len(logbins)):
-    bin_width[i-1] = logbins[i]-logbins[i-1]
-    
-print(bin_width)
-print(logbins[1:]/bin_width)
-
-print(logbins[1]-logbins[0])
-print(logbins[15]-logbins[14])
-
-coords_sampled = sample_rejection(distribution,1e-10,5,seeds,10000)
+coords_sampled = sample_rejection(distribution,1e-4,5,seeds,10000)
 radii_sampled = coords_sampled[0]
 dist_sampled = coords_sampled[1]
 
-counts = np.histogram(radii_sampled, bins=logbins)[0]
-print(counts)
-plt.hist(counts,bins=20,density=True,edgecolor='black')
-#plt.xscale('log')
-plt.show()
-
-#plt.hist(radii_sample_2[0],bins=logbins,density=True,edgecolor='black')
-#plt.xscale('log')
-#plt.show()
-
-plt.scatter(radii_sampled,dist_sampled,s=0.1,color='black',zorder=10)
-plt.hist(radii_sampled,bins=logbins,density=False,histtype='step')
-plt.plot(radii,p_x)
+plt.scatter(radii_sampled,dist_sampled*Nsat,s=0.1,\
+            color='black',zorder=10,label='sampled points')
+plt.hist(radii_sampled,bins=logbins,density=True,edgecolor='black',\
+         label='histogram')
+plt.plot(radii,p_x*Nsat,label='N(x)')
 plt.xlabel('x')
-plt.ylabel('p(x)')
-plt.xscale('log')
-plt.yscale('log')
-plt.show()
-
-plt.scatter(radii_sampled,dist_sampled,s=0.1,color='black',zorder=10)
-plt.hist(radii_sampled,bins=logbins,density=False,histtype='step')
-plt.plot(radii,p_x)
-plt.xlabel('x')
-plt.ylabel('p(x)')
+plt.ylabel('N(x)=p(x)$<N_{sat}>$')
 plt.xscale('log')
 plt.yscale('log')
 plt.xlim([1e-4,5])
 plt.ylim([1e-30,1e4])
+plt.title('log-log plot showing N(x) and hist of sampled points')
+plt.legend()
 plt.show()
 
 #PROBLEM 1C
 
-"""
-random_index = (RNG(21,35,4,5324582,100)*len(sample)).astype(int)
-print(random_index)
-random_index = random_index.tolist()
-print(random_index[10])
-print(random_index[0:10]+random_index[10+1:])
+def select(sample,seed_list,N):
+    selected_sample = np.array([])
+    index = int(len(seed_list)/4)
+    for i in range(len(seed_list)):
+        random_index = int(RNG(21,35,4,int(index*10e10),1)*len(sample))
+        if np.any(selected_sample == sample[random_index]): 
+            continue #this condition checks we don't draw same galaxy twice! 
+        else:
+            selected_sample = np.append(selected_sample, sample[random_index])
+            if len(selected_sample) == N:
+                return selected_sample
+        index = index + 1 
+        
+def selection_sort(array):
+    N = len(array)
+    for i in range(N-1):
+        i_min = i
+        for j in range(i+1,N):
+            if array[j] < array[i_min]:
+                i_min = j
+        if i_min != i:
+            array[i_min],array[i] = array[i],array[i_min]
+    return array
 
-def selection(sample,N):
-    random_indices = (RNG(21,35,4,5324582,N)*len(sample)).astype(int)
-    random_indices = random_indices.tolist()
-    for i in range(len(random_indices)):
-        arr_without_i = random_indices[0:i]+random_indices[i+1:]
-        if random_indices[i] in arr_without_i:
-            random_indices[i] = (RNG(21,35,4,267355,1)*len(sample)).tolist()
-    random_indices = np.array(random_indices).astype(int)
-    return random_indices 
+radii_selected = select(radii_sampled,seeds,100)
+radii_selected_sorted = selection_sort(radii_selected)
 
-A_test = np.array([1,3,5,2,6,1,7,2,4])
-print(selection(A_test,5))
-"""
+def n_normalised_integrand(x):
+    return 4*np.pi*(x**2)*n_normalised(x)
+
+Nsat_selected = np.zeros(len(radii_selected_sorted))
+for i in range(len(radii_selected_sorted)):
+    Nsat_selected[i] = romberg_loweropen(n_normalised_integrand\
+                                         ,0,radii_selected_sorted[i],5)
+        
+plt.plot(radii_selected_sorted,Nsat_selected)
+plt.xscale('log')
+plt.xlim([1e-4,5])
+plt.xlabel('x')
+plt.ylabel('N(<x)')
+plt.title('Number of galaxies $N(<x)$ within radius $x$')
+plt.show()
 
 #PROBLEM 1D 
 
@@ -206,18 +191,20 @@ def ridders(f,x,h,d,m): #function, x_values, h, d, order m
 import timeit
 
 begin_CD = timeit.default_timer()
+#for i in range(100):
 derivative_CD = central_diff(n_normalised,1,1e-4) #gives great value 
 end_CD = timeit.default_timer() - begin_CD
 print(f'it took {end_CD} seconds')
 print(np.around(derivative_CD,12))
 
 begin_Ridder = timeit.default_timer()
+#for i in range(100):
 derivative_Ridder = ridders(n_normalised,1,1e-4,4,5) #gives great value 
 end_Ridder = timeit.default_timer() - begin_Ridder
 print(f'it took {end_Ridder} seconds')
 print(np.around(derivative_Ridder,12))
  
-derivative_analytical = n_deriv_analytical(1,(100/n_noNorm),100,2.4,0.25,1.6)
+derivative_analytical = n_deriv_analytical(1,A_true,100,2.4,0.25,1.6)
 print(np.around(derivative_analytical,12))
 
 """
