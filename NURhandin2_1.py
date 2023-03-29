@@ -83,43 +83,61 @@ def RNG(a1,a2,a3,seed,N): #random number generator using combi of lcg and xor
         seed = xor_shift64(seed,a1,a2,a3)
     return random_numbers
 
-radii_sample = RNG(21,35,4,123456789,10000)*5  #Unif(0,5) distribution
-print(radii_sample)
+seeds = RNG(21,35,4,123456789,int(1e6))
 
-plt.hist(radii_sample,bins=20,density=True,edgecolor='black')
-plt.xlabel('x')
-plt.show()
+def sample_rejection(f,a,b,seed_list,N):
+    sample,f_sample = [], []
+    x_values = np.linspace(a,b,N)
+    y_values = f(x_values)
+    f_max = max(y_values)
+    print('max value is ' ,f_max)
+    middle_index = int(len(seed_list)/2)
+    for i in range(len(seed_list)):
+        x = RNG(21,35,4,int(seed_list[i]*10e10),1)*(b-a) + a 
+        y = RNG(21,35,4,int(seed_list[middle_index]*10e10),1)*(f_max-a) + a 
+        if y < f(x):
+            sample.append(x)
+            f_sample.append(y)
+        middle_index = middle_index + 1 
+        if len(sample) == N:
+            sample,f_sample = np.array(np.squeeze([sample])),\
+                np.array(np.squeeze([f_sample]))
+            return sample,f_sample
 
-def n_normalised_integrand(x):
-    return 4*np.pi*(x**2)*n_normalised(x)/100
-
-f_reject = 1 - (simpson_loweropen(n_normalised_integrand,0,5,10000))/5
-print(f_reject)
+def distribution(x):
+    return 4*np.pi*(x**2)*n_normalised(x)*100
 
 radii = np.linspace(1e-10,5,10000)
-p_x = n_normalised_integrand(radii)
+p_x = distribution(radii)
+logbins = np.logspace(-4,np.log10(5),21)
 
-sampled_points = np.zeros(10000)
-for i in range(10000):
-    sampled_points[i] = n_normalised_integrand(radii_sample[i])
-    
-def rejection(f,x):
-    y = np.array([])
-    for i in range(len(x)):
-        if x[i] <= f(x[i]):
-            y = np.append(y,x[i])
-    return y 
-    
-sample = rejection(n_normalised_integrand,radii_sample)
-sample_y = n_normalised_integrand(sample)
+bin_width = np.zeros(len(logbins)-1)
 
-print(len(radii_sample),len(sample))
-print(max(sample))
-
-logbins = np.logspace(-4,np.log10(5),20)
+for i in range(1,len(logbins)):
+    bin_width[i-1] = logbins[i]-logbins[i-1]
     
-plt.scatter(sample,sample_y,s=1,color='black',zorder=10)
-plt.hist(sample,bins=logbins,density=True,edgecolor='black')
+print(bin_width)
+print(logbins[1:]/bin_width)
+
+print(logbins[1]-logbins[0])
+print(logbins[15]-logbins[14])
+
+coords_sampled = sample_rejection(distribution,1e-10,5,seeds,10000)
+radii_sampled = coords_sampled[0]
+dist_sampled = coords_sampled[1]
+
+counts = np.histogram(radii_sampled, bins=logbins)[0]
+print(counts)
+plt.hist(counts,bins=20,density=True,edgecolor='black')
+#plt.xscale('log')
+plt.show()
+
+#plt.hist(radii_sample_2[0],bins=logbins,density=True,edgecolor='black')
+#plt.xscale('log')
+#plt.show()
+
+plt.scatter(radii_sampled,dist_sampled,s=0.1,color='black',zorder=10)
+plt.hist(radii_sampled,bins=logbins,density=False,histtype='step')
 plt.plot(radii,p_x)
 plt.xlabel('x')
 plt.ylabel('p(x)')
@@ -127,21 +145,15 @@ plt.xscale('log')
 plt.yscale('log')
 plt.show()
 
-plt.scatter(sample,sample_y,s=1,color='black',zorder=10)
-plt.hist(sample,bins=logbins,density=True,edgecolor='black')
+plt.scatter(radii_sampled,dist_sampled,s=0.1,color='black',zorder=10)
+plt.hist(radii_sampled,bins=logbins,density=False,histtype='step')
 plt.plot(radii,p_x)
 plt.xlabel('x')
 plt.ylabel('p(x)')
 plt.xscale('log')
 plt.yscale('log')
 plt.xlim([1e-4,5])
-plt.ylim([1e-30,10])
-plt.show()
-
-#print(logbins)
-
-plt.hist(sample,bins=logbins,density=False,edgecolor='black')
-plt.xscale('log')
+plt.ylim([1e-30,1e4])
 plt.show()
 
 #PROBLEM 1C
@@ -175,9 +187,36 @@ def central_diff(f,x,h):
 def n_deriv_analytical(x,A,Nsat,a,b,c):
     return A*Nsat*(np.exp(-(x/b)**c))*((a-3)/b * (x/b)**(a-4) -\
                                        c/b * (x/b)**(a-3) * (x/b)**(c-1))
+        
+def ridders(f,x,h,d,m): #function, x_values, h, d, order m
+    approximations = np.zeros(m)
+    approximations[0] = central_diff(f,x,h)
+    for i in range(1,m):
+        h = h/d
+        approximations[i] = central_diff(f,x,h)
+    #return approximations
+    #print(approximations)
+    for i in range(1,m):
+        d_power = d**(2*(i+1))
+        for j in range(0,m-i):
+            approximations[j] = (d_power*approximations[j+1] -\
+                                 approximations[j]) / (d_power-1)
+    return approximations[0]
 
-derivative_CD = central_diff(n_normalised,1,1e-6) #gives great value 
+import timeit
+
+begin_CD = timeit.default_timer()
+derivative_CD = central_diff(n_normalised,1,1e-4) #gives great value 
+end_CD = timeit.default_timer() - begin_CD
+print(f'it took {end_CD} seconds')
 print(np.around(derivative_CD,12))
+
+begin_Ridder = timeit.default_timer()
+derivative_Ridder = ridders(n_normalised,1,1e-4,4,5) #gives great value 
+end_Ridder = timeit.default_timer() - begin_Ridder
+print(f'it took {end_Ridder} seconds')
+print(np.around(derivative_Ridder,12))
+ 
 derivative_analytical = n_deriv_analytical(1,(100/n_noNorm),100,2.4,0.25,1.6)
 print(np.around(derivative_analytical,12))
 
