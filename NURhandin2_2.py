@@ -4,7 +4,6 @@ k=1.38e-16 # erg/K
 aB = 2e-13 # cm^3 / s
 
 #PROBLEM 2A
-print('PROBLEM 2A')
 
 # here no need for nH nor ne as they cancel out
 def equilibrium1(T,Z,Tc,psi):
@@ -101,6 +100,7 @@ for i in range(100): #100 steps are more than sufficient to get an average
     T_2a = newton_raphson(equilibrium1_input,3e3,0.1)[0] #logaritmic middle! 
 T_2a_iter = newton_raphson(equilibrium1_input,3e3,0.1)[1]
 end_2a = (timeit.default_timer()-begin_2a)/100 #get the average time 
+print('2a: For the gas:')
 print(f'Using {T_2a_iter} iterations, the Newton-Raphson algorithm')
 print(f'took {end_2a} seconds')
 
@@ -120,7 +120,6 @@ print('The time taken in seconds is',end)
 """
 
 #PROBLEM 2B
-print('PROBLEM 2B')
 
 def equilibrium2_inputCase1(T): #three input cases for low,mid, high density
     return equilibrium2(T,0.015,1e4,0.929,1e-4,5e-10,1e-15)
@@ -152,6 +151,7 @@ for i in range(10):
     T_2b_case1 = bisection(equilibrium2_inputCase1,1,1e15,1e-10)[0]
 T_2b1_iter = bisection(equilibrium2_inputCase1,1,1e15,1e-10)[1]
 end_2b1 = (timeit.default_timer()-begin_2b1)/100
+print('2b: For the low density gas:')
 print(f'Using {T_2b1_iter} iterations, the bisection algorithm')
 print(f'took {end_2b1} seconds')
 
@@ -160,6 +160,7 @@ for i in range(100):
     T_2b_case2 = newton_raphson(equilibrium2_inputCase2,3e7,1e-10)[0]
 T_2b2_iter = newton_raphson(equilibrium2_inputCase2,3e7,1e-10)[1]
 end_2b2 = (timeit.default_timer()-begin_2b2)/100
+print('2b: For the intermediate density gas:')
 print(f'Using {T_2b2_iter} iterations, the Newton-Raphson algorithm')
 print(f'took {end_2b2} seconds')
 
@@ -168,13 +169,14 @@ for i in range(100):
     T_2b_case3 = newton_raphson(equilibrium2_inputCase3,3e7,1e-10)[0]
 T_2b3_iter = newton_raphson(equilibrium2_inputCase3,3e7,1e-10)[1]
 end_2b3 = (timeit.default_timer()-begin_2b3)/100
+print('2b: For the high density gas:')
 print(f'Using {T_2b3_iter} iterations, the Newton-Raphson algorithm')
 print(f'took {end_2b3} seconds')
 
-output = [[T_2a_iter,end_2a],\
-          [T_2b1_iter,end_2b1],\
-          [T_2b2_iter,end_2b2],\
-          [T_2b3_iter,end_2b3]] #writes output to .txt file
+output = [[T_2a,T_2a_iter,end_2a],\
+          [T_2b_case1,T_2b1_iter,end_2b1],\
+          [T_2b_case2,T_2b2_iter,end_2b2],\
+          [T_2b_case3,T_2b3_iter,end_2b3]] #writes output to .txt file
     
 np.savetxt('NURhandin2problem2.txt',output,fmt='%f')
 
