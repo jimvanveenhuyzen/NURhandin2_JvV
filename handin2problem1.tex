@@ -1,0 +1,68 @@
+\section*{Code of Problem 1}
+
+The code is included below. Like in the previous hand-in, I use code between sub-questions so I found that having one big .py file per problem is the most efficient. The bold text indicates coded functions! 
+
+\lstinputlisting{NURhandin2_1.py}
+
+\section*{Problem 1a}
+
+In this problem we are asked to write a numerical integrator to solve equation (2) of the Hand-in for $A$. The approach I take is as follows. First as the hint says, we must consider what $dV$ is in this case. Triple integration boundaries and the $dV$ indicate we want to take an integral of a volume, with it's boundaries set by the problem. To make life easier, we will use the spherical coordinate system $(r,\theta,\phi)$, where we will in this case define the radius $r$ to be equal to $x$. First, we must take the whole polar and azimuthal angular range in space. These are given by $0 \le \theta \le \pi$ and $0 \le \phi \le 2\pi$ respectively. $n(x)$ is indepedent of these coordinates so they are integrated out relatively easily as will be seen. Furthermore, the problem states we must use a radius of $x = 0$ up to $x_{max} = 5$ if we want to obtain the average total number of satellites. Using the spherical integration element $dV$ = $x^2 sin(\theta)dxd\theta d\phi$, this results in the integral:
+
+\begin{equation}	
+	<N_{sat}> = \iiint_{V} n(x)dV = \int_0^{2\pi} \int_0^{\pi} \int_{x=0}^{x_{max}=5} n(x) x^2 dx sin(\theta)d\theta d\phi = 4\pi  \int_{x=0}^{x_{max}=5} n(x) x^2 dx
+	\label{1}
+\end{equation}
+
+Now, as instructed we will be using the given parameters for $n(x)$ throughout the problem. Also as is done in the python implemented of van Daalen, we will first solve the integral numerically for a normalisation constant $A$ = 1. We do this because this is essentially the same as dividing out the factor $A$ on both sides of equation \ref{1}. We can then find the value of $A$ by dividing $N_{sat}$ by the result of the integral $N_{sat,A=1}$ we just found. In terms of equations, we first get $<N_{sat}>/A = N_{sat,A=1}$, so we can then find $A =<N_{sat}>/ N_{sat,A=1}$.\\
+
+The method of integration I use is the $\textbf{Romberg integration method}$, in which we combine approximations found using the trapezoid integration method analogous to Neville's algorithm. A very important detail in this problem is that we have to use a semi-open integration method. For our chosen parameter of $a = 2.6$, we get a negative exponent for $x/b$. This means that if we try to insert $x = 0$, $n(x)$ blows up to infinity. To prevent this, we use an integration method that integrates from a semi-open interval (a,b] instead of [a,b]. For the first Romberg approximation, we use the $\textbf{semi-open trapezoid}$ integration method with $N =1000$ points, so excluding this first value for only an approximation will have barely any effect on the final result of the Romberg integration method, thus minimalising the error. Note that I'm using an order $m=20$. This is very high, but as we only require a single point, this isn't too detrimental for efficiency. Using this method to integrate in the semi open interval (0,5], we find an integration constant value of $A \approx 9.19484$, where more significant values are present in the output below. Here, the top value represents the value of $A$, the other two values are not yet relevant: 
+
+\lstinputlisting{NURhandin2problem1.txt}
+
+Note that continuing in the rest of the problem, I will use a redefinition of $n(x)$ with the previous parameters, but instead of $A$ = 1, I will now use the $A \approx 9.19$ we found in this sub-question. This ensures I can use a distrubition with correct normalisation. 
+
+\section*{Problem 1b}
+
+In this problem we are asked to sample the distribution using 10.000 points meant to present random galaxies within the interval $x= 0$ to $x_{max} = 5$. A very important part of this problem is that in order to sample a distribution, we will need to pick a random value in a uniform distribution, $U(0,5)$. I created my $\textbf{Random Number Generator}$ as follows. First, I make a 'simple' Linear Congruential Generator ($\textbf{LCG}$) to transform some input value $I$ into some other random value $I_{out}$. I then combine this with a 64-bit XOR-shift method, which appends to the LCG we just made with some input value. This $\textbf{XOR-shift}$ then again outputs a value, which is then the combination of both LCG and 64-bit XOR-shift, significantly increasing range and 'randomness' of the value. This combination is done using a final function called $\textbf{RNG}$, which takes in input parameters $a_1,a_2,a_3$ to append to the XOR-shift function, the amount of random numbers you want to generate $N$, and some seed to start off with. Note that we change the seed after the first iteration, so only need an initial seed to start us off. The way I decide to obtain enough seeds is by appending this same function using $seed = 123456789$ (random choice) and generating 1 million random numbers to be used as seeds in the coming problems. I choose 1 million because it's significantly higher than 10.000 and thus more than enough for the purposes of this problem. If we would like larger samples than 10.000, then we should simply increase the amount of seeds $N$ to a value where it is several magnitudes above the required random values like in this situation! In conclusion: $\textit{requirement:} \ N_{seed} >> N_{sample}$.\\
+
+Now, we move on to the sampling of this distribution. First and foremost, the distribution is given by $p(x) dx = N(x) dx / <N_{sat}>$. Here $N(x)$ is the number of satellites at a radius $x$, given by $N(x) = 4\pi x^2 n(x)$. In total using $<N_{sat}>$ = 100, this gives: 
+
+\begin{equation}
+	p(x) dx = N(x) dx /<N_{sat}> = 4\pi x^2 n(x) dx/100
+\end{equation}
+
+For this I have used the Rejection Sampling method from the lectures. The reason for this is that the distribution $p(x) = 4\pi x^2 n(x)/100$ we are dealing with is quite complex, so inverting these to apply Slice or Transformation sampling is not very practical at all. To do the sampling we use the RNG function we just created to find both an $x$ and $y$ within a Uniform(0,5) distribution for each iteration. For this we append different parts of the array containing 1 million seeds to be used for RNG purposes, namely the start and middle indices respectively. We then check if $y < f(x)$. If this is true, we accept $x$ into the sample. We continue this until we have 10.000 sampled $x$ points. We are sure to return the corresponding $N(x)$ values of the galaxies also so we can plot the points as a comparisong with $p(x)$ and the histogram. As instructed, we use 20 logaritmically scaled bins from $x = 10^{-4}$ to $x = x_{max}$. We make sure to divide by the width of the bin by using the $\textit{density=True}$ argument in the histogram function of Matplotlib. As you can see in the plot below, both profiles agree nicely with each other. 
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\linewidth]{./problem1b.png}
+  \caption{Literature result, say something...}
+\end{figure}
+
+%add figure! 
+
+\section*{Problem 1c}
+
+In this problem we must draw 100 galaxies randomly from our 10.000 randomly generated galaxies in part b. For this it is key to use the RNG function created earlier to randomly pull values from the list of 10.000 galaxies. For this $\textbf{select}$-like function we again take some arbitrary starting point within the seeds array created in b so we can get a different seed for each iteration. These seeds are random, so the $\textit{random index}$ can be the index of any of the 10.000 galaxies within the sample with equal probability, granted we use a Uniform(0,10.000) distribution to draw each index from. So (1) holds. Furthermore, we use a while loop to check whether the drawn index has already been used before. While in the loop we keep checking indices until we find an index that has not been used before, satisfying (2) and (3). Finally, once we reach the desired sample size, which is 100 in this case, we return the array of the generated samples. Next, we use a very simple $\textbf{selection sort}$ implementation to sort the galaxies in terms of smallest to largest radius and subsequently make an xlog plot from $x=10^{-4}$ to $x = x_{max}$ as is asked, for the y-axis we must integrate $N(<x)$ from $x=0$ to $x=x_i$ for the 100 galaxies $i$. We must do this because the problem asks specifically for the galaxies within the radius, not at the radius, so integration is required. For this, we again use the Romberg method, but now we use a much lower order of $m=5$. This is because we must now do the integration 100 times, so using a higher order significantly slows the program up to the point where the increased accuracy is not worth the corresponding drop in efficiency. Finally, the histogram is plotted below.
+
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=0.9\linewidth]{./problem1c.png}
+  \caption{Literature result, say something...}
+\end{figure}
+
+%add figure!
+
+\section*{Problem 1d}
+
+In this last sub-question, we must find the numerical derivative of the number density profile $n(x)$ at a single point $x=1$. First, let us find the analytical derivative using calculus. Applying the product- and chain rule, we find:\\
+
+\begin{equation}
+	\frac{dn(x)}{dx} = A <N_{sat}> \exp[-\frac{x}{b}^{c}]\Bigg(\Big(\frac{a-3}{b}\Big) \Big(\frac{x}{b}\Big)^{a-4} - \Big(\frac{c}{b}\Big) \Big(\frac{x}{b}\Big)^{a-3} \Big(\frac{x}{b}\Big)^{c-1}\Bigg)
+\end{equation}
+
+Writing this expression as a python function and plugging in $x=1$ gives us an analytical derivative up to 15 digits of of $dn/dx |_{x=1}$ = $-0.625327444726391$. Now, we use a numerical method to find the derivative. We do this by using $\textbf{Ridders' method}$, which implicitly also appends the $\textbf{central difference}$ method to find an array of size order=$m$ of initial approximations to the derivative. Then, analogous to Neville and Romberg, we combine approximations until improvement over the previous best approximation is smaller than the target error. For this case, I use $h = 10^{-4}$ and compare the derivatives found using the central difference- and Ridders' method with $d= 4, m=5$. Using this value of $h$, I can conclude that from around 6 significant digits, central difference seems to deviate from the analytical result, while Ridders' holds strong until 9 significant digits. However, I do find that using $~100$ iterations that Ridders' method is over twice as slow as the central difference method, which makes sense as you perform much more operations using Ridders' method.\\
+
+But for this problem, the priority does seem to be that the output should be as close as possible to the analytical result. In this regard, Ridders' method wins out. Therefore, I use this in my final result. Using the previous parameters, I find that the derivative using Ridders' is $dn/dx |_{x=1}$ = $-0.625327444696093$. The output is printed below, where the middle value is for Ridders', the bottom for analytical. 
+
+\lstinputlisting{NURhandin2problem1.txt}

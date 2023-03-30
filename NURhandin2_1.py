@@ -119,6 +119,8 @@ plt.ylim([1e-30,1e4])
 plt.title('log-log plot showing N(x) and hist of sampled points')
 plt.legend()
 plt.show()
+plt.savefig('problem1b.png')
+plt.close()
 
 #PROBLEM 1C
 
@@ -164,6 +166,8 @@ plt.xlabel('x')
 plt.ylabel('N(<x)')
 plt.title('Number of galaxies $N(<x)$ within radius $x$')
 plt.show()
+plt.savefig('problem1c.png')
+plt.close()
 
 #PROBLEM 1D 
 
@@ -180,8 +184,6 @@ def ridders(f,x,h,d,m): #function, x_values, h, d, order m
     for i in range(1,m):
         h = h/d
         approximations[i] = central_diff(f,x,h)
-    #return approximations
-    #print(approximations)
     for i in range(1,m):
         d_power = d**(2*(i+1))
         for j in range(0,m-i):
@@ -197,10 +199,9 @@ derivative_analytical = n_deriv_analytical(1,A_true,100,2.4,0.25,1.6)
 print('The analytic value of dn/dx at x=1 is',\
       np.around(derivative_analytical,15))
     
-derivatives = [derivative_Ridder,derivative_analytical]
+output = [A_true,derivative_Ridder,derivative_analytical]
 
-np.savetxt('NURhandin2_problem1a.txt', [A_true])
-np.savetxt('NURhandin2_problem1d.txt', derivatives)
+np.savetxt('NURhandin2problem1.txt',output,fmt='%1.12f')
 
 
 

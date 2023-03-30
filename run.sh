@@ -1,8 +1,7 @@
 #!/bin/bash
 
-python3 NURhandin2_1.py > NURhandin2_problem1a.txt
-python3 NURhandin2_1.py > NURhandin2_problem1d.txt
-python3 NURhandin2_2
+python3 NURhandin2_1.py > NURhandin2problem1.txt
+python3 NURhandin2_2.py > NURhandin2problem2.txt
 
 echo "Generating the pdf"
 

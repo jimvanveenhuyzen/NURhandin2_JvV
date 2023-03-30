@@ -1,0 +1,34 @@
+\section*{Code of Problem 2}
+
+The code is included below. Like in the previous hand-in, I use code between sub-questions so I found that having one big .py file per problem is the most efficient. The bold text indicates coded functions! 
+
+\lstinputlisting{NURhandin2_2.py}
+
+\section*{Problem 2a}
+
+This problem is all about using different methods for root finding to find an accurate value of the temperature $T$ for different cases, in which we want to use the method that is both efficient (less steps taken) and fast (less time taken). I would like to start this off by mentioning that I wrote all root finding methods discussed in the lecture: $\textbf{bisection}$, secant, $\textbf{false position}$ and $\textbf{Newton Raphson}$. However, I decided not to include secant in my final code as it appears to not be fastest for any of the 4 total cases we use. Also, I created another root finding function which is a combination of false position and Newton Raphson which I appropiately call $\textbf{FPNR}$, in an attempt to see if my results improve. This is my attempt at creating a function that first uses False Position to get close to the correct value, then uses Newton Raphson to finish as it is faster and more efficient. For this function I use a special 'switch' parameter which decides at which point we move on from False Position to Newton Raphson. For 2a in particular though, this method does not give improve things in the slightest.\\
+
+For problem 2a, we have the following function we want to find the root of (value of $T$ for which it tends to 0):\\
+
+\begin{equation}
+	\Lambda_{pe} - \Gamma_{rr} = \psi k_B T_c - \Bigg[0.684 - 0.0416 \ln \Big(\frac{T_4}{Z^2}\Big) \Bigg] k_B T = 0
+\end{equation}
+
+To solve this, I test bisection, false position and Newton Raphson. In this case, bisection seems to take both the most iterations and is the slowest, so this obviously drops out. Now, for the other two methods, we find that Newton Raphson is the most efficient, taking just 4 iterations, while False position takes 9 iterations. However, Newton Raphson appears to be around a factor 1.5 times slower than using False position. I don't find this difference in speed too significant, so using the Newton Raphson method in this situation is best. Important to note is that for the midpoint the problem recommends me to use, I assume this to be the midpoint in logspace, which is around $3 \cdot 10^3$ here. This method gives us an equilibrium temperature of T = $32539.1 \pm 0.1$K.
+
+\section*{Problem 2b}
+
+This problem is a bit more tricky, both in terms of the mathematical expression and which root finder is optimal. A key detail to realize is that the gas is fully ionized, so $n_e$ = $n_H$. We can use these two interchangably therefore. We consider three cases with three different values of $n_e$, which we will see don't all use just one root finding method to solve the equation for. The expression we want to solve now is given by:\\
+
+\begin{equation*}
+	\Lambda_{pe} - \Gamma_{rr} -  \Gamma_{FF} + \Lambda_{CR} + \Lambda_{MHD} = (\psi T_c - \Bigg[0.684 - 0.0416 \ln \Big(\frac{T_4}{Z^2}\Big) \Bigg] T)k_B - 0.54 T_4^{0.37} \alpha_B n_H k_B T + A \xi_{CR} + 8.9 \cdot 10^{-26} T_4 = 0 
+\end{equation*}
+
+Now we look at three cases, namely $n_e = 10^{-4} \text{cm}^{-3}$, $n_e = 1 \text{cm}^{-3}$ and $n_e = 10^{4} \text{cm}^{-3}$. The latter two cases, $n_e = 1 \text{cm}^{-3}$ and $n_e = 10^{4} \text{cm}^{-3}$, are the most straightforward. They are namely both best solved by Newton Raphson, both taking only 11 iterations at almost exactly the same time. So we can conclude that they are both most efficiently found using Newton Raphson. The first case is trickier however. We cannot use Newton Raphson for this case as it diverges, which is something Newton Raphson is known for! To get to a solution, I test my other three methods and see what works best. False position is by far both the slowest and least efficient as it takes the longest iterations at 123. Next, I test the combined FP and NR methods against bisection. The combined method is actually the most efficient, it only takes 43 iterations for some favourable parameters while bisecton takes 54. However, the bisection algorithm is over twice as fast, which I think is a much more significant total indicator than the very slight difference in efficiency. Therefore, I conclude that it is best to use bisection to find the root for $n_e = 10^{-4} \text{cm}^{-3}$.\\
+
+The numerical values of the equilibrium temperatures found are as follows: for a low density gas $n_e = 10^{-4} \text{cm}^{-3}$, we get T = $160647887536816.12 \pm 10^{-10} \text{K} \approx 1.6 \cdot 10^{14}$ K, for an intermediate density gas $n_e = 1 \text{cm}^{-3}$, it is T = $33861.300235178554 \pm 10^{-10} \text{K} \approx 3.4 \cdot 10^{4}$ K, and finally for a high density gas $n_e = 10^{4} \text{cm}^{-3}$ it is T = $10525.88601966122 \pm 10^{-10} \text{K} \approx 1.1 \cdot 10^{4}$ K. The output of the problem is given by:\\
+
+\lstinputlisting{NURhandin2problem2.txt}
+
+
+
