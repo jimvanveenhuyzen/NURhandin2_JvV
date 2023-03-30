@@ -24,7 +24,7 @@ def trap_loweropen(f,a,b,N): #eval. at semi open interval (a,b]
 def romberg_loweropen(f,a,b,m):
     h = (b-a) #stepsize
     r = np.zeros(m)
-    r[0] = trap_loweropen(f,a,b,1)
+    r[0] = trap_loweropen(f,a,b,1000)
     N_p = 1
     for i in range(1,m-1):
         r[i] = 0
@@ -45,6 +45,7 @@ def romberg_loweropen(f,a,b,m):
 
 A_true = Nsat/romberg_loweropen(n_integrand,0,5,20)
 print(f'The normalisation constant is {A_true}')
+
 
 def n_normalised(x):
     return n(x,A_true,100,2.4,0.25,1.6)
@@ -110,7 +111,7 @@ plt.hist(radii_sampled,bins=logbins,density=True,edgecolor='black',\
          label='histogram')
 plt.plot(radii,p_x*Nsat,label='N(x)')
 plt.xlabel('x')
-plt.ylabel('N(x)=p(x)$<N_{sat}>$')
+plt.ylabel('N(x) = p(x)$<N_{sat}>$')
 plt.xscale('log')
 plt.yscale('log')
 plt.xlim([1e-4,5])
@@ -126,12 +127,12 @@ def select(sample,seed_list,N):
     index = int(len(seed_list)/4)
     for i in range(len(seed_list)):
         random_index = int(RNG(21,35,4,int(index*10e10),1)*len(sample))
-        if np.any(selected_sample == sample[random_index]): 
-            continue #this condition checks we don't draw same galaxy twice! 
-        else:
-            selected_sample = np.append(selected_sample, sample[random_index])
-            if len(selected_sample) == N:
-                return selected_sample
+        while np.any(selected_sample == sample[random_index]): 
+            #this condition checks we don't draw same galaxy twice!
+            random_index = int(RNG(21,35,4,int(index*10e10),1)*len(sample))
+        selected_sample = np.append(selected_sample, sample[random_index])
+        if len(selected_sample) == N:
+            return selected_sample
         index = index + 1 
         
 def selection_sort(array):
@@ -156,7 +157,7 @@ for i in range(len(radii_selected_sorted)):
     Nsat_selected[i] = romberg_loweropen(n_normalised_integrand\
                                          ,0,radii_selected_sorted[i],5)
         
-plt.plot(radii_selected_sorted,Nsat_selected)
+plt.plot(radii_selected_sorted,Nsat_selected,color='black')
 plt.xscale('log')
 plt.xlim([1e-4,5])
 plt.xlabel('x')
@@ -188,39 +189,18 @@ def ridders(f,x,h,d,m): #function, x_values, h, d, order m
                                  approximations[j]) / (d_power-1)
     return approximations[0]
 
-import timeit
 
-begin_CD = timeit.default_timer()
-#for i in range(100):
-derivative_CD = central_diff(n_normalised,1,1e-4) #gives great value 
-end_CD = timeit.default_timer() - begin_CD
-print(f'it took {end_CD} seconds')
-print(np.around(derivative_CD,12))
-
-begin_Ridder = timeit.default_timer()
-#for i in range(100):
 derivative_Ridder = ridders(n_normalised,1,1e-4,4,5) #gives great value 
-end_Ridder = timeit.default_timer() - begin_Ridder
-print(f'it took {end_Ridder} seconds')
-print(np.around(derivative_Ridder,12))
+print('Using Ridders method, dn/dx at x=1 is',np.around(derivative_Ridder,15))
  
 derivative_analytical = n_deriv_analytical(1,A_true,100,2.4,0.25,1.6)
-print(np.around(derivative_analytical,12))
+print('The analytic value of dn/dx at x=1 is',\
+      np.around(derivative_analytical,15))
+    
+derivatives = [derivative_Ridder,derivative_analytical]
 
-"""
-x_values = np.linspace(0.9,1.1,1000)
-dx = 0.2/1000
-y_values = n_normalised(x_values)
-derivative = np.diff(y_values)/dx
-
-plt.plot(x_values,y_values)
-plt.plot(x_values[1:],derivative)
-plt.hlines(-0.6253288977,0.9,1.1,linestyle='dashed')
-plt.grid()
-plt.show()
-"""
-
-
+np.savetxt('NURhandin2_problem1a.txt', [A_true])
+np.savetxt('NURhandin2_problem1d.txt', derivatives)
 
 
 
