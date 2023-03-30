@@ -15,7 +15,10 @@ In this problem we are asked to write a numerical integrator to solve equation (
 
 Now, as instructed we will be using the given parameters for $n(x)$ throughout the problem. Also as is done in the python implemented of van Daalen, we will first solve the integral numerically for a normalisation constant $A$ = 1. We do this because this is essentially the same as dividing out the factor $A$ on both sides of equation \ref{1}. We can then find the value of $A$ by dividing $N_{sat}$ by the result of the integral $N_{sat,A=1}$ we just found. In terms of equations, we first get $<N_{sat}>/A = N_{sat,A=1}$, so we can then find $A =<N_{sat}>/ N_{sat,A=1}$.\\
 
-The method of integration I use is the $\textbf{Romberg integration method}$, in which we combine approximations found using the trapezoid integration method analogous to Neville's algorithm. A very important detail in this problem is that we have to use a semi-open integration method. For our chosen parameter of $a = 2.6$, we get a negative exponent for $x/b$. This means that if we try to insert $x = 0$, $n(x)$ blows up to infinity. To prevent this, we use an integration method that integrates from a semi-open interval (a,b] instead of [a,b]. For the first Romberg approximation, we use the $\textbf{semi-open trapezoid}$ integration method with $N =1000$ points, so excluding this first value for only an approximation will have barely any effect on the final result of the Romberg integration method, thus minimalising the error. Note that I'm using an order $m=20$. This is very high, but as we only require a single point, this isn't too detrimental for efficiency. Using this method to integrate in the semi open interval (0,5], we find an integration constant value of $A \approx 9.19484$, where more significant values are present in the output below. Here, the top value represents the value of $A$, the other two values are not yet relevant: 
+The method of integration I use is the $\textbf{Romberg integration method}$, in which we combine approximations found using the trapezoid integration method analogous to Neville's algorithm. A very important detail in this problem is that we have to use a semi-open integration method. For our chosen parameter of $a = 2.6$, we get a negative exponent for $x/b$. This means that if we try to insert $x = 0$, $n(x)$ blows up to infinity. To prevent this, we use an integration method that integrates from a semi-open interval (a,b] instead of [a,b]. For the first Romberg approximation, we use the $\textbf{semi-open trapezoid}$ integration method with $N =1000$ points, so excluding this first value for only an approximation will have barely any effect on the final result of the Romberg integration method, thus minimalising the error. Note that I'm using an order $m=20$. This is very high, but as we only require a single point, this isn't too detrimental for efficiency.
+
+\newpage 
+Using this method to integrate in the semi open interval (0,5], we find an integration constant value of $A \approx 9.19484$, where more significant values are present in the output below. Here, the top value represents the value of $A$, the other two values are not yet relevant: 
 
 \lstinputlisting{NURhandin2problem1.txt}
 
@@ -31,28 +34,27 @@ Now, we move on to the sampling of this distribution. First and foremost, the di
 	p(x) dx = N(x) dx /<N_{sat}> = 4\pi x^2 n(x) dx/100
 \end{equation}
 
+\newpage
 For this I have used the Rejection Sampling method from the lectures. The reason for this is that the distribution $p(x) = 4\pi x^2 n(x)/100$ we are dealing with is quite complex, so inverting these to apply Slice or Transformation sampling is not very practical at all. To do the sampling we use the RNG function we just created to find both an $x$ and $y$ within a Uniform(0,5) distribution for each iteration. For this we append different parts of the array containing 1 million seeds to be used for RNG purposes, namely the start and middle indices respectively. We then check if $y < f(x)$. If this is true, we accept $x$ into the sample. We continue this until we have 10.000 sampled $x$ points. We are sure to return the corresponding $N(x)$ values of the galaxies also so we can plot the points as a comparisong with $p(x)$ and the histogram. As instructed, we use 20 logaritmically scaled bins from $x = 10^{-4}$ to $x = x_{max}$. We make sure to divide by the width of the bin by using the $\textit{density=True}$ argument in the histogram function of Matplotlib. As you can see in the plot below, both profiles agree nicely with each other. 
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.9\linewidth]{./problem1b.png}
-  \caption{Literature result, say something...}
+  \includegraphics[width=0.8\linewidth]{./problem1b.png}
+  \caption{In this log-log plot we plot the number of galaxies N(x) at a randomly sampled x for 10.000 sampled points against a histogram of those same sampled points.}
 \end{figure}
 
-%add figure! 
-
+\newpage
 \section*{Problem 1c}
 
 In this problem we must draw 100 galaxies randomly from our 10.000 randomly generated galaxies in part b. For this it is key to use the RNG function created earlier to randomly pull values from the list of 10.000 galaxies. For this $\textbf{select}$-like function we again take some arbitrary starting point within the seeds array created in b so we can get a different seed for each iteration. These seeds are random, so the $\textit{random index}$ can be the index of any of the 10.000 galaxies within the sample with equal probability, granted we use a Uniform(0,10.000) distribution to draw each index from. So (1) holds. Furthermore, we use a while loop to check whether the drawn index has already been used before. While in the loop we keep checking indices until we find an index that has not been used before, satisfying (2) and (3). Finally, once we reach the desired sample size, which is 100 in this case, we return the array of the generated samples. Next, we use a very simple $\textbf{selection sort}$ implementation to sort the galaxies in terms of smallest to largest radius and subsequently make an xlog plot from $x=10^{-4}$ to $x = x_{max}$ as is asked, for the y-axis we must integrate $N(<x)$ from $x=0$ to $x=x_i$ for the 100 galaxies $i$. We must do this because the problem asks specifically for the galaxies within the radius, not at the radius, so integration is required. For this, we again use the Romberg method, but now we use a much lower order of $m=5$. This is because we must now do the integration 100 times, so using a higher order significantly slows the program up to the point where the increased accuracy is not worth the corresponding drop in efficiency. Finally, the histogram is plotted below.
 
 \begin{figure}[h!]
   \centering
-  \includegraphics[width=0.9\linewidth]{./problem1c.png}
-  \caption{Literature result, say something...}
+  \includegraphics[width=0.8\linewidth]{./problem1c.png}
+  \caption{Here we plot the number of galaxies within some radius x, given by N($<$x). Because we're interested in the number of galaxies within a certain radius, N($<$x) looks like a cumulative distribution function.}
 \end{figure}
 
-%add figure!
-
+\newpage
 \section*{Problem 1d}
 
 In this last sub-question, we must find the numerical derivative of the number density profile $n(x)$ at a single point $x=1$. First, let us find the analytical derivative using calculus. Applying the product- and chain rule, we find:\\
